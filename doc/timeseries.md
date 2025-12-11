@@ -1,39 +1,8 @@
-# Tembo Time-Series API
+# Forked from Tembo Time-Series API
 
 The purpose of this extension is to provide a cohesive user experience around the creation, maintenance, and use of time-series tables.
 
-[![Tembo Cloud Try Free](https://tembo.io/tryFreeButton.svg)](https://cloud.tembo.io/sign-up)
-
-[![Static Badge](https://img.shields.io/badge/%40tembo-community?logo=slack&label=slack)](https://join.slack.com/t/tembocommunity/shared_invite/zt-277pu7chi-NHtvHWvLhHwyK0Y5Y6vTPw)
-[![OSSRank](https://shields.io/endpoint?url=https://ossrank.com/shield/4022)](https://ossrank.com/p/4022)
-
 ## Installation
-
-### Running with docker
-
-Start a Docker container running Postgres with `pg_timeseries` pre-installed.
-
-```bash
-docker run -d --name pg-timeseries -p 5432:5432 -e POSTGRES_PASSWORD=postgres quay.io/tembo/timeseries-pg:latest
-```
-
-Then connect to the database and enable the extension:
-
-```bash
-psql postgres://postgres:postgres@localhost:5432/postgres
-```
-
-```sql
-CREATE EXTENSION timeseries CASCADE;
-```
-
-```text
-NOTICE:  installing required extension "columnar"
-NOTICE:  installing required extension "pg_cron"
-NOTICE:  installing required extension "pg_partman"
-NOTICE:  installing required extension "pg_ivm"
-CREATE EXTENSION
-```
 
 ## Getting Started
 
@@ -62,7 +31,7 @@ The time-series tables you create start out life as little more than typical [pa
 
 ### Partition Sizing
 
-Related to the above information on indexes is the question of partition size. Because calculating the total size of partitioned tables can be tedious, Tembo's extension provides several easy-to-use views surfacing this information.
+Related to the above information on indexes is the question of partition size. Because calculating the total size of partitioned tables can be tedious, this extension provides several easy-to-use views surfacing this information.
 
 To examine the table (data), index, and total size for each of your partitions, simple query the time-series partition information view, `ts_part_info`. A general rule of thumb is that each partition should be able to fit within roughly one quarter of your available memory. This assumes that not much apart from the time-series workload is going on, and things like parallel workers may complicate matters, but work on getting partition total size down to around a quarter of your memory and you're off to a good start.
 
@@ -74,9 +43,7 @@ Fortunately, it's incredibly easy to simply drop time-series partitions on a sch
 
 ### Compression
 
-Sometimes you know older data isn't queried very often, but still don't want to commit to just dropping older partitions. In this case, compression may be what you desire.
-
-By calling `set_ts_compression_policy` on a time-series table with an appropriate interval (perhaps`'1 month'`), this extension will take care of compressing partitions (using a columnar storage method) older than the specified interval, once an hour. As with the retention policy functionality, a function is also provided for clearing any existing policy (existing partitions will not be decompressed, however).
+Compression options still be configured to maintain backwards compatibility, but no longer applies and the `apply_compression_policy` function has been stubbed out.
 
 ### Analytics Helpers
 
@@ -111,35 +78,20 @@ The output of this query will differ from simply hitting the target table direct
   * The time column's values will be binned to the provided width
   * Extra rows will be added for periods with no data. They will include the time stamp for that bin and NULL in all other columns
 
-### `make_view_incremental`
-
-This function accepts a view and converts it into a materialized view which is kept up-to-date after every modification. This removes the need for users to pick between always up-to-date `VIEW`s and having to call `REFRESH` on `MATERIALIZED VIEW`s.
-
-The underlying functionality is provided by [`pg_ivm`](https://github.com/sraoss/pg_ivm); consult that project for more information.
-
 ## Requirements
 
-As seen in the Docker installation demonstration, the `pg_timeseries` extension depends on three other extensions:
+The `pg_timeseries` extension depends on other extensions:
 
-* [Hydra Columnar](https://github.com/hydradatabase/hydra)
 * [pg_cron](https://github.com/citusdata/pg_cron)
 * [pg_partman](https://github.com/pgpartman/pg_partman)
-* [pg_ivm](https://github.com/sraoss/pg_ivm)
 
 We recommend referring to documentation within these projects for more advanced use cases, or for a better understanding at how this extension works.
 
 ## Roadmap
 
-While `timeseries` is still in its early days, we have a concrete vision for the features we will be including in the future. Feedback on the importance of a given feature to customer use cases will help us better prioritize the following lists.
+This fork of `pg_timeseries` is primarily geared towards the [OpenNMS pg_timeseries plugin](https://github.com/dino2gnt/timeseries-integration-pgtimeseries), and getting the extension buildable again. 
 
-This list is somewhat ordered by likelihood of near-term delivery, or maybe difficulty, but that property is only loosely intended and no guarantee of priority. Again, feedback from users will take precedence.
-
-  - Assorted "analytic" functions frequently associated with time-series workloads
-  - Periodic `REFRESH MATERIALIZED VIEW` — set schedules for background refresh of materialized views (useful for dashboarding, etc.)
-  - Roll-off to `TABLESPACE` — as data ages, it will be moved into a specified table space
-  - Automatic `CLUSTER BY`/repack for non-live partitions
-  - Migration tools — adapters for existing time-scale installations to ease migration and promote best practices in new table configuration
-  - "Approximate" functions — maintain statistics within known error bounds without rescanning all data
-  - Change partition width — modify partition width of existing table (for future data)
-  - "Roll-up and roll-off" — as data ages, combine multiple rows into single summary rows
-  - Repartition — modify partition width of existing table data
+  - Remove the requirement for the abandoned `columnar` extension
+  - Remove the requirement for the abandoned Tembo fork of `pg_ivm`
+  - Make it buildable without these requirements
+  - Make sure it works with all currently supported releases of PostgreSQL

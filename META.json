@@ -1,18 +1,18 @@
 {
   "name": "timeseries",
-  "abstract": "Convenience API for Tembo time series stack",
-  "description": "Convenience API for Tembo time series stack",
-  "version": "0.1.7",
+  "abstract": "Simple timeseries stack for PostgreSQL",
+  "description": "Simple timeseries stack for PostgreSQL",
+  "version": "0.1.8",
   "maintainer": [
-    "Jason Petersen <jason@tembo.io>"
+    "Dino Yancey <dino.yancey@opennms.com>"
   ],
   "license": "mit",
   "provides": {
     "timeseries": {
-      "abstract": "Convenience API for Tembo time series stack",
+      "abstract": "Simple timeseries stack for PostgreSQL",
       "file": "sql/timeseries.sql",
       "docfile": "doc/timeseries.md",
-      "version": "0.1.6"
+      "version": "0.1.8"
     }
   },
   "prereqs": {
@@ -21,24 +21,22 @@
         "PostgreSQL": "14.0.0"
       },
       "recommends": {
-        "columnar": "1.1.2",
         "pg_cron": "1.6.2",
-        "pg_ivm": "1.9.0",
         "pg_partman": "4.5.1"
       }
     }
   },
   "resources": {
     "bugtracker": {
-      "web": "https://github.com/tembo-io/pg_timeseries/issues/"
+      "web": "https://github.com/dino2gnt/pg_timeseries_extension/issues/"
     },
     "repository": {
-      "url": "git://github.com/tembo-io/pg_timeseries.git",
-      "web": "https://github.com/tembo-io/pg_timeseries/",
+      "url": "git://github.com/dino2gnt/pg_timeseries_extension.git",
+      "web": "https://github.com/dino2gnt/pg_timeseries_extension/",
       "type": "git"
     }
   },
-  "generated_by": "Jason Petersen",
+  "generated_by": "Dino Yancey",
   "meta-spec": {
     "version": "1.0.0",
     "url": "https://pgxn.org/meta/spec.txt"

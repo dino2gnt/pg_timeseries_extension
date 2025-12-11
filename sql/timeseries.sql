@@ -348,60 +348,12 @@ BEGIN
 END;
 $function$;
 
--- This function implements the core of compression application: given a target table ID
--- (which must be time-series enabled) and a compression offset, all partitions falling
--- entirely behind the offset (from the present time) will be converted to using columnar
--- storage. This function is "idempotent" in the sense that repeated calls will behave
--- identically given the same wall clock time and arguments.
+-- This is stubbed out because columnar has been abandoned by Hydra
 CREATE OR REPLACE FUNCTION @extschema@.apply_compression_policy(target_table_id regclass, comp_offset interval)
  RETURNS void
  LANGUAGE plpgsql
 AS $function$
-DECLARE
-table_name text;
-part_row record;
-part_beg timestamptz;
-part_end timestamptz;
-part_am name;
 BEGIN
-  IF comp_offset IS NULL THEN
-    RETURN;
-  END IF;
-
-  SELECT format('%s.%s', n.nspname, c.relname)
-  INTO table_name
-  FROM pg_class c
-  LEFT JOIN pg_namespace n
-    ON n.oid = c.relnamespace
-  WHERE c.oid=target_table_id;
-
-  FOR part_row IN
-    SELECT
-      partition_schemaname,
-      partition_tablename
-    FROM @extschema@.show_partitions(table_name, 'ASC')
-    LOOP
-      SELECT child_start_time, child_end_time
-        INTO part_beg, part_end
-        FROM @extschema@.show_partition_info(
-          part_row.partition_schemaname || '.' ||
-          part_row.partition_tablename);
-
-      SELECT am.amname
-        INTO part_am
-        FROM pg_class c, pg_am am
-        WHERE c.oid = (part_row.partition_schemaname || '.' ||
-                       part_row.partition_tablename)::regclass AND
-              c.relam = am.oid;
-
-    IF part_am <> 'columnar' AND
-       part_end < (now() - comp_offset) THEN
-      PERFORM columnar.alter_table_set_access_method(
-        part_row.partition_schemaname || '.' ||
-        part_row.partition_tablename, 'columnar');
-      EXECUTE format('ALTER TABLE %I ATTACH PARTITION %I.%I FOR VALUES FROM (%L) TO (%L)', target_table_id, part_row.partition_schemaname, part_row.partition_tablename, part_beg, part_end);
-    END IF;
-  END LOOP;
 END;
 $function$;
 
@@ -613,80 +565,3 @@ CREATE AGGREGATE locf(anyelement) (
   SFUNC = locf_agg,
   STYPE = anyelement
 );
-
--- A wrapper around the incremental view functionality provided by pg_ivm. This
--- function accepts a pointer to an existing view (presumably one that queries
--- a time-series table) and rewrites that view to point at an underlying IMMV
--- instead. The purpose of this is to avoid exposing users to implementation-
--- specific columns used to track partial aggregate state within IMMV tables:
--- these columns may confuse users or interfere with software which expects
--- all visible columns to be meaningful to an application (say, dashboards).
---
--- For the record, IMMV means "incrementally maintainable materialized view",
--- though at the moment these objects are actually plain tables. They are
--- created by calling functions from the pg_ivm project ("PostgreSQL incre-
--- mental view maintenance"). After creation, these views automatically keep
--- aggregates up-to-date with the latest data written to any referenced tables.
--- This is an improvement over plain views (which reaggregate on every scan)
--- and materialized views (which require periodic calls to REFRESH).
---
--- Within this wrapper, the provided view's SQL is extracted, then a new IMMV
--- is created using the extracted query. Because this IMMV will have at least
--- one (sometimes two or more) internal column per aggregate (beginning with
--- the prefix '__ivm_'), it is desirable to allow the user to query a wrapper
--- view instead. So the original view's query is redefined to point at the
--- IMMV table, but restricted solely to the visible columns of the original
--- query. Big picture: the user can create an aggregating view, check it
--- quickly (with a LIMIT, for instance), then make it incremental once they
--- have verified it's producing the aggregate rows they want.
-CREATE OR REPLACE FUNCTION public.make_view_incremental(target_view_id regclass)
- RETURNS void
- LANGUAGE plpgsql
-AS $function$
-DECLARE
-  orig_view_sql text;
-  immv_name text;
-  columns_sql text;
-  old_client_msg text;
-  old_log_msg text;
-BEGIN
-  -- check that target_view_id is actually a view
-  -- check that target_view_id mentions only one table
-
-  -- get the original SQL definition of the view to be upgraded
-  SELECT pg_get_viewdef(target_view_id) INTO orig_view_sql;
-
-  -- build the name we'll use for the new immv
-  SELECT format('%I.%I', n.nspname, c.relname || '_immv')
-    INTO immv_name
-    FROM pg_class c
-    LEFT JOIN pg_namespace n
-      ON n.oid = c.relnamespace
-    WHERE c.oid=target_view_id;
-
-  -- pg_ivm is chatty, even at NOTICE, so turn it down
-  SELECT current_setting('client_min_messages') INTO old_client_msg;
-  SELECT current_setting('log_min_messages') INTO old_log_msg;
-  SET LOCAL client_min_messages TO warning;
-  SET LOCAL log_min_messages TO warning;
-
-  -- create an immv with the original view's SQL
-  PERFORM create_immv(immv_name, orig_view_sql);
-
-  -- restore previous client/log levels
-  EXECUTE format('SET LOCAL client_min_messages TO %s', old_client_msg);
-  EXECUTE format('SET LOCAL log_min_messages TO %s', old_log_msg);
-
-  -- build a list of visible columns for the view
-  SELECT string_agg(quote_ident(attname), ', ' ORDER BY attnum ASC)
-    INTO columns_sql
-    FROM pg_attribute
-    WHERE attnum > 0 AND
-          NOT attisdropped AND
-          attrelid=target_view_id;
-
-  -- modify the existing view to point at the immv, hiding internal columns
-  EXECUTE format('CREATE OR REPLACE VIEW %I AS SELECT %s FROM %s',
-                 target_view_id, columns_sql, immv_name);
-END;
-$function$;
