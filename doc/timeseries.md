@@ -1,6 +1,6 @@
 # Forked from Tembo Time-Series API
 
-The purpose of this extension is to provide a cohesive user experience around the creation, maintenance, and use of time-series tables.
+The purpose of this extension is to provide a cohesive user experience around the creation, maintenance, and use of time-series tables. Originally written by Tembo, Inc and later transfered to [Adam Hendel](https://github.com/ChuckHend/pg_timeseries), this fork serves to keep the pg_timeseries extension buildable against current PostgreSQL with currently available dependencies, primarily in support of the [OpenNMS](https://www.opennms.com) [pgtimeseries tss integration plugin](https://github.com/dino2gnt/timeseries-integration-pgtimeseries)
 
 ## Installation
 
