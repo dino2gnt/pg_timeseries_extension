@@ -11,7 +11,7 @@ jobs:
 # Debian packages
   debs:
     strategy:
-      max-parallel: 1
+      max-parallel: 2
       matrix:
         pg_version: [ 13, 14, 15, 16, 17, 18 ]
     runs-on: ubuntu-latest
@@ -50,26 +50,20 @@ jobs:
             debian/artifacts/*.deb
 
 # RPM Packages
-  rpms:
+  el9-rpms:
     runs-on: ubuntu-latest
     container:
-      image: rockylinux/rockylinux:10
+      image: rockylinux/rockylinux:9
       options: --privileged
     strategy:
-      max-parallel: 2
+      max-parallel: 1
       matrix:
         pg_version: [ 13, 14, 15, 16, 17, 18 ]
-        dist: [10, 9]
-        include:
-          - dist: 9
-            target: rocky+epel-9
-          - dist: 10
-            target: rocky+epel-10
     steps:
       - name: Prepare env
         run: |
           dnf -y install epel-release
-          dnf -y install https://ftp.postgresql.org/pub/repos/yum/reporpms/EL-${{ matrix.dist }}-x86_64/pgdg-redhat-repo-latest.noarch.rpm
+          dnf -y install https://ftp.postgresql.org/pub/repos/yum/reporpms/EL-9-x86_64/pgdg-redhat-repo-latest.noarch.rpm
           dnf -y install --enablerepo=crb postgresql${{ matrix.pg_version }}-server postgresql${{ matrix.pg_version }}-devel rpm-build
       - uses: actions/checkout@v4
 
@@ -85,7 +79,45 @@ jobs:
       - name: Persist RPM build artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: pg-timeseries-${{ matrix.pg_version }}-el${{ matrix.dist }}-rpm
+          name: pg-timeseries-${{ matrix.pg_version }}-el9-rpm
+          path: rpm/artifacts/*
+      - name: Release ${{ github.ref_name }}
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          fail_on_unmatched_files: true
+          files: |
+            rpm/artifacts/rpmbuild/RPMS/**
+  el10-rpms:
+    runs-on: ubuntu-latest
+    container:
+      image: rockylinux/rockylinux:10
+      options: --privileged
+    strategy:
+      max-parallel: 1
+      matrix:
+        pg_version: [ 13, 14, 15, 16, 17, 18 ]
+    steps:
+      - name: Prepare env
+        run: |
+          dnf -y install epel-release
+          dnf -y install https://ftp.postgresql.org/pub/repos/yum/reporpms/EL-10-x86_64/pgdg-redhat-repo-latest.noarch.rpm
+          dnf -y install --enablerepo=crb postgresql${{ matrix.pg_version }}-server postgresql${{ matrix.pg_version }}-devel rpm-build
+      - uses: actions/checkout@v4
+
+      - name: Create RPM packages
+        run: |
+          mkdir -p ~/rpmbuild/SOURCES
+          VER=$(grep -m 1 '[[:space:]]\{6\}"version":' META.json | sed -e 's/[[:space:]]*"version":[[:space:]]*"\([^"]*\)",\{0,1\}/\1/')
+          rpmbuild --define "pgmajorversion ${{ matrix.pg_version }}" --define "pgtsversion $VER" --undefine=_disable_source_fetch -bb pg_timeseries.spec
+      - name: Collect RPM build artifacts
+        run: |
+          mkdir -p rpm/artifacts
+          mv "${HOME}/rpmbuild" rpm/artifacts
+      - name: Persist RPM build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: pg-timeseries-${{ matrix.pg_version }}-el10-rpm
           path: rpm/artifacts/*
       - name: Release ${{ github.ref_name }}
         if: startsWith(github.ref, 'refs/tags/v')
