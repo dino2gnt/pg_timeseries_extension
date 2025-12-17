@@ -81,7 +81,7 @@ jobs:
 
 # Release
   release:
-    needs: rpms debs
+    needs: [rpms, debs]
     runs-on: ubuntu-latest
     steps:
       - name: Release ${{ github.ref_name }}
