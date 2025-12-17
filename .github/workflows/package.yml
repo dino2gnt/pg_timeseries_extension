@@ -48,7 +48,7 @@ jobs:
       image: rockylinux/rockylinux:10
       options: --privileged
     strategy:
-      fail-fast: false
+      max-parallel: 1
       matrix:
         pg_version: [ 13, 14, 15, 16, 17, 18 ]
         dist: [10, 9]
