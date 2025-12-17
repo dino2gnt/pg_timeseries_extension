@@ -7,6 +7,8 @@ on:
 
 ## Build and create the project on every push ...  this should be fiiiiine, right?
 jobs:
+
+# Debian packages
   debs:
     strategy:
       max-parallel: 1
@@ -24,7 +26,6 @@ jobs:
       - uses: actions/checkout@v4
       - name: Add workspace to git safe.directory
         run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
-# Debian packages
       - name: Create Debian packages
         run: |
           git checkout debian/control
@@ -40,6 +41,13 @@ jobs:
         with:
           name: postgresql-${{ matrix.pg_version }}-timeseries-deb
           path: debian/artifacts/*
+      - name: Release ${{ github.ref_name }}
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          fail_on_unmatched_files: true
+          files: |
+            debian/artifacts/*.deb
 
 # RPM Packages
   rpms:
@@ -79,12 +87,6 @@ jobs:
         with:
           name: pg-timeseries-${{ matrix.pg_version }}-el${{ matrix.dist }}-rpm
           path: rpm/artifacts/*
-
-# Release
-  release:
-    needs: [rpms, debs]
-    runs-on: ubuntu-latest
-    steps:
       - name: Release ${{ github.ref_name }}
         if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2
@@ -92,4 +94,3 @@ jobs:
           fail_on_unmatched_files: true
           files: |
             rpm/artifacts/rpmbuild/RPMS/**
-            debian/artifacts/*.deb
