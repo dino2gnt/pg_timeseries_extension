@@ -2,6 +2,11 @@
 %global pginstdir /usr/pgsql-%{pgmajorversion}
 %global debug_package %{nil}
 
+%if 0%{?pgtsversion}
+# default?
+%global pgtsversion 0.1.8 
+%endif
+
 Summary:    Simple timeseries tables for PostgreSQL
 Name:       pg_%{sname}_%{pgmajorversion}
 Version:    %{pgtsversion}
