@@ -77,7 +77,7 @@ jobs:
       - name: Persist RPM build artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: pg-timeseries-${{ matrix.pg_version }}-rpm
+          name: pg-timeseries-${{ matrix.pg_version }}-el${{ matrix.dist }}-rpm
           path: rpm/artifacts/*
 
 # Release
