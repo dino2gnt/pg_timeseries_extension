@@ -30,6 +30,7 @@ jobs:
         run: |
           git checkout debian/control
           sed -i 's/@pgmajorversion@/${{ matrix.pg_version }}/g' debian/control
+          dch -i "latest"
           debuild --no-sign
       - name: Collect Debian build artifacts
         run: |
@@ -43,7 +44,8 @@ jobs:
 # RPM Packages
       - name: Create RPM packages
         run: |
-          rpmbuild --define "pgmajorversion ${{ matrix.pg_version }}" --define "pgtsversion ${{ github.ref_name }}" --undefine=_disable_source_fetch -bb pg_timeseries.spec
+          VER=$(grep -m 1 '[[:space:]]\{6\}"version":' META.json | sed -e 's/[[:space:]]*"version":[[:space:]]*"\([^"]*\)",\{0,1\}/\1/')
+          rpmbuild --define "pgmajorversion ${{ matrix.pg_version }}" --define "pgtsversion $VER" --undefine=_disable_source_fetch -bb pg_timeseries.spec
       - name: Collect RPM build artifacts
         run: |
           mkdir -p rpm/artifacts
