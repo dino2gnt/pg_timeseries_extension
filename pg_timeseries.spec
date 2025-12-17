@@ -23,7 +23,7 @@ extension buildable against current PostgreSQL with currently available
 dependencies, primarily in support of the OpenNMS pgtimeseries tss integration plugin.
 
 %prep
-%setup -q -n pg_%{sname}-%{version}
+%setup -q -n pg_%{sname}_extension-%{version}
 
 %build
 USE_PGXS=1 PATH=%{pginstdir}/bin:$PATH %{__make} %{?_smp_mflags}
