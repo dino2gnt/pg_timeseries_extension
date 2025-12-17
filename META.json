@@ -1,7 +1,7 @@
 {
-  "name": "timeseries",
+  "name": "pg_timeseries",
   "abstract": "Simple timeseries stack for PostgreSQL",
-  "description": "Simple timeseries stack for PostgreSQL",
+  "description": "Simple timeseries stack for PostgreSQL, originally written by Tembo",
   "version": "0.1.8",
   "maintainer": [
     "Dino Yancey <dino.yancey@opennms.com>"
