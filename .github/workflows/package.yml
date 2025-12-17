@@ -1,0 +1,55 @@
+---
+name: pg_timeseries extension builer
+run-name: Build PostgreSQL pg_timeseries extension
+on:
+  push:
+  workflow_dispatch:
+
+## Build and create the project on every push ...  this should be fiiiiine, right?
+jobs:
+  build:
+    strategy:
+      max-parallel: 1
+      matrix:
+        pg_version: [ 13, 14, 15, 16, 17, 18 ]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Add workspace to git safe.directory
+        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+      - name: Create Debian packages
+        run: |
+          git checkout debian/control
+          sed -i 's/@pgmajorversion@/${{ matrix.pg_version }}/g' debian/control
+          debuild --no-sign
+      - name: Collect Debian build artifacts
+        run: |
+          mkdir -p debian/artifacts
+          mv ../*.deb debian/artifacts
+      - name: Persist Debian build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: postgresql-${{ matrix.pg_version }}-timeseries-deb
+          path: debian/artifacts/*
+      - name: Create RPM packages
+        run: |
+          rpmbuild --define "pgmajorversion ${{ matrix.pg_version }}" --define "pgtsversion ${{ github.ref_name }}" --undefine=_disable_source_fetch -bb pg_timeseries.spec
+      - name: Collect RPM build artifacts
+        run: |
+          mkdir -p rpm/artifacts
+          mv "${HOME}/rpmbuild" rpm/artifacts
+      - name: Persist RPM build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: pg-timeseries-${{ matrix.pg_version }}-rpm
+          path: rpm/artifacts/*
+      - name: Release ${{ github.ref_name }}
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          fail_on_unmatched_files: true
+          files: |
+            rpm/artifacts/rpmbuild/RPMS/**
+            debian/artifacts/*.deb
