@@ -62,7 +62,7 @@ jobs:
         run: |
           dnf -y install epel-release
           dnf -y install https://ftp.postgresql.org/pub/repos/yum/reporpms/EL-${{ matrix.dist }}-x86_64/pgdg-redhat-repo-latest.noarch.rpm
-          dnf -y install postgresql${{ matrix.pg_version }}-server postgresql${{ matrix.pg_version }}-devel
+          dnf -y install --enablerepo=crb postgresql${{ matrix.pg_version }}-server postgresql${{ matrix.pg_version }}-devel
 
       - name: Create RPM packages
         run: |
