@@ -1,13 +1,13 @@
-EXTENSION    = $(shell grep -m 1 '"name":' META.json | \
-               sed -e 's/[[:space:]]*"name":[[:space:]]*"\([^"]*\)",/\1/')
+EXTENSION    = timeseries
+
 EXTVERSION   = $(shell grep -m 1 '[[:space:]]\{6\}"version":' META.json | \
                sed -e 's/[[:space:]]*"version":[[:space:]]*"\([^"]*\)",\{0,1\}/\1/')
 DISTVERSION  = $(shell grep -m 1 '[[:space:]]\{3\}"version":' META.json | \
                sed -e 's/[[:space:]]*"version":[[:space:]]*"\([^"]*\)",\{0,1\}/\1/')
+EXTVERSIONS   = $(shell grep -m 1 '[[:space:]]\{6\}"version":' META.json | \
+               sed -e 's/[[:space:]]*"version":[[:space:]]*"\([^"]*\)",\{0,1\}/\1/')
 
-EXTVERSIONS = 0.1.8
-
-DATA 		 = $(wildcard sql/*--*.sql)
+DATA             = $(filter-out sql/$(EXTENSION)--$(EXTVERSION).sql, $(wildcard sql/*--*.sql))
 DATA_built   = $(foreach v,$(EXTVERSIONS),sql/$(EXTENSION)--$(v).sql)
 
 DOCS         = $(wildcard doc/*.md)
@@ -30,19 +30,5 @@ latest-changes.md: Changes
 
 # generate each version's file installation file by concatenating
 # previous upgrade scripts
-sql/$(EXTENSION)--0.1.6.sql: sql/$(EXTENSION).sql
+sql/$(EXTENSION)--$(EXTVERSIONS).sql: sql/$(EXTENSION).sql
 	cat $^ > $@
-
-install-pg-partman:
-	git clone https://github.com/pgpartman/pg_partman.git && \
-    cd pg_partman && \
-    make && make install && \
-    cd .. && rm -rf pg_partman
-
-install-pg-cron:
-	git clone https://github.com/citusdata/pg_cron.git && \
-	cd pg_cron && \
-	make && make install && \
-    cd .. && rm -rf pg_cron
-
-install-dependencies: install-pg-partman install-pg-cron
