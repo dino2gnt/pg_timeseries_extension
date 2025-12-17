@@ -16,7 +16,7 @@ jobs:
     permissions:
       contents: write
     steps:
-      - name: Run Install Commands
+      - name: Prepare env
         run: |
           sudo apt install -y postgresql-common ca-certificates
           sudo /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y
@@ -63,12 +63,12 @@ jobs:
           dnf -y install epel-release
           dnf -y install https://ftp.postgresql.org/pub/repos/yum/reporpms/EL-${{ matrix.dist }}-x86_64/pgdg-redhat-repo-latest.noarch.rpm
           dnf -y install --enablerepo=crb postgresql${{ matrix.pg_version }}-server postgresql${{ matrix.pg_version }}-devel rpm-build
+      - uses: actions/checkout@v4
 
       - name: Create RPM packages
         run: |
           mkdir -p ~/rpmbuild/SOURCES
-          pwd
-          ls -la ..
+          git clone 
           VER=$(grep -m 1 '[[:space:]]\{6\}"version":' META.json | sed -e 's/[[:space:]]*"version":[[:space:]]*"\([^"]*\)",\{0,1\}/\1/')
           rpmbuild --define "pgmajorversion ${{ matrix.pg_version }}" --define "pgtsversion $VER" --undefine=_disable_source_fetch -bb pg_timeseries.spec
       - name: Collect RPM build artifacts
