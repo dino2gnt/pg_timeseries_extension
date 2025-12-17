@@ -18,7 +18,7 @@ jobs:
     steps:
       - name: Run Install Commands
         run: |
-          sudo apt-get install devscripts
+          sudo apt-get install devscripts postgresql-${{ matrix.pg_version }} postgresql-server-dev-${{ matrix.pg_version }}
       - uses: actions/checkout@v4
       - name: Add workspace to git safe.directory
         run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
