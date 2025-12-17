@@ -62,11 +62,13 @@ jobs:
         run: |
           dnf -y install epel-release
           dnf -y install https://ftp.postgresql.org/pub/repos/yum/reporpms/EL-${{ matrix.dist }}-x86_64/pgdg-redhat-repo-latest.noarch.rpm
-          dnf -y install --enablerepo=crb postgresql${{ matrix.pg_version }}-server postgresql${{ matrix.pg_version }}-devel
+          dnf -y install --enablerepo=crb postgresql${{ matrix.pg_version }}-server postgresql${{ matrix.pg_version }}-devel rpmbuild
 
       - name: Create RPM packages
         run: |
           mkdir -p ~/rpmbuild/SOURCES
+          pwd
+          ls -la
           VER=$(grep -m 1 '[[:space:]]\{6\}"version":' META.json | sed -e 's/[[:space:]]*"version":[[:space:]]*"\([^"]*\)",\{0,1\}/\1/')
           rpmbuild --define "pgmajorversion ${{ matrix.pg_version }}" --define "pgtsversion $VER" --undefine=_disable_source_fetch -bb pg_timeseries.spec
       - name: Collect RPM build artifacts
