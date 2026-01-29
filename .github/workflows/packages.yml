@@ -30,7 +30,7 @@ jobs:
         run: |
           git checkout debian/control
           sed -i 's/@pgmajorversion@/${{ matrix.pg_version }}/g' debian/control
-          dch -i "latest"
+          dch -i -a "latest"
           debuild --no-sign
       - name: Collect Debian build artifacts
         run: |
