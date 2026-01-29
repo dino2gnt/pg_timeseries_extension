@@ -70,7 +70,7 @@ jobs:
       - name: Create RPM packages
         run: |
           mkdir -p ~/rpmbuild/SOURCES
-          VER=$(grep -m 1 '[[:space:]]\{6\}"version":' META.json | sed -e 's/[[:space:]]*"version":[[:space:]]*"\([^"]*\)",\{0,1\}/\1/')
+          VER=$(grep "default_version" timeseries.control | sed -n "s/.*'\(.*\)'.*/\1/p")
           rpmbuild --define "pgmajorversion ${{ matrix.pg_version }}" --define "pgtsversion $VER" --undefine=_disable_source_fetch -bb pg_timeseries.spec
       - name: Collect RPM build artifacts
         run: |
@@ -108,7 +108,7 @@ jobs:
       - name: Create RPM packages
         run: |
           mkdir -p ~/rpmbuild/SOURCES
-          VER=$(grep -m 1 '[[:space:]]\{6\}"version":' META.json | sed -e 's/[[:space:]]*"version":[[:space:]]*"\([^"]*\)",\{0,1\}/\1/')
+          VER=$(grep "default_version" timeseries.control | sed -n "s/.*'\(.*\)'.*/\1/p")
           rpmbuild --define "pgmajorversion ${{ matrix.pg_version }}" --define "pgtsversion $VER" --undefine=_disable_source_fetch -bb pg_timeseries.spec
       - name: Collect RPM build artifacts
         run: |
