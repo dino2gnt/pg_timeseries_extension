@@ -31,7 +31,7 @@ jobs:
           git checkout debian/control
           sed -i 's/@pgmajorversion@/${{ matrix.pg_version }}/g' debian/control
           VER=$(grep "default_version" timeseries.control | sed -n "s/.*'\(.*\)'.*/\1/p")
-          dch -v "$VER"
+          dch -n "Release $VER"
           debuild --no-sign
       - name: Collect Debian build artifacts
         run: |
